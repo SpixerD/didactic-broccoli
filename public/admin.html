@@ -194,7 +194,7 @@
             <h3>API Settings</h3>
             <div class="form-group">
                 <label>Server URL:</label>
-                <input type="text" id="serverUrl" value="https://didactic-broccoli-production.up.railway.app/" placeholder="https://didactic-broccoli-production.up.railway.app/">
+                <input type="text" id="serverUrl" value="https://didactic-broccoli-production.up.railway.app" placeholder="https://didactic-broccoli-production.up.railway.app">
             </div>
             <div class="form-group">
                 <label>API Key:</label>
@@ -247,7 +247,7 @@
             }
 
             loadSettings() {
-                this.serverUrl = localStorage.getItem('serverUrl') || 'https://didactic-broccoli-production.up.railway.app/';
+                this.serverUrl = localStorage.getItem('serverUrl') || 'https://didactic-broccoli-production.up.railway.app';
                 this.apiKey = localStorage.getItem('apiKey') || '';
                 
                 document.getElementById('serverUrl').value = this.serverUrl;
