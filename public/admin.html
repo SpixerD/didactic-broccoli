@@ -123,6 +123,16 @@
             color: #856404;
         }
         
+        .trial-badge {
+            background: #17a2b8;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        
         table {
             width: 100%;
             border-collapse: collapse;
@@ -194,7 +204,7 @@
             <h3>API Settings</h3>
             <div class="form-group">
                 <label>Server URL:</label>
-                <input type="text" id="serverUrl" value="http://localhost:3000" placeholder="http://localhost:3000">
+                <input type="text" id="serverUrl" value="https://didactic-broccoli-production.up.railway.app" placeholder="https://didactic-broccoli-production.up.railway.app">
             </div>
             <div class="form-group">
                 <label>API Key:</label>
@@ -234,8 +244,8 @@
         </div>
 
         <div class="card">
-            <h2>Recent Licenses</h2>
-            <button onclick="loadRecentLicenses()">Load Recent Licenses</button>
+            <h2>All Licenses</h2>
+            <button id="loadRecentBtn" onclick="loadRecentLicenses()">Load All Licenses</button>
             <div id="recentLicenses"></div>
         </div>
     </div>
@@ -247,7 +257,7 @@
             }
 
             loadSettings() {
-                this.serverUrl = localStorage.getItem('serverUrl') || 'http://localhost:3000';
+                this.serverUrl = localStorage.getItem('serverUrl') || 'https://didactic-broccoli-production.up.railway.app';
                 this.apiKey = localStorage.getItem('apiKey') || '';
                 
                 document.getElementById('serverUrl').value = this.serverUrl;
@@ -468,8 +478,89 @@
             }
 
             async loadRecentLicenses() {
-                // This would require an additional endpoint to list recent licenses
-                this.showAlert('Recent licenses endpoint needs to be implemented on the server', 'error');
+                // Load all licenses (renamed from recent to all)
+                try {
+                    const result = await this.makeRequest('/api/admin/licenses', 'GET');
+                    
+                    if (result.success) {
+                        this.displayAllLicenses(result.licenses);
+                    }
+                } catch (error) {
+                    this.showAlert('Error loading licenses', 'error');
+                }
+            }
+
+            displayAllLicenses(licenses) {
+                const container = document.getElementById('recentLicenses');
+                
+                if (!licenses || licenses.length === 0) {
+                    container.innerHTML = '<p>No licenses found.</p>';
+                    return;
+                }
+
+                // Sort licenses by creation date (newest first)
+                const sortedLicenses = licenses.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+                let html = `
+                    <div style="margin-bottom: 15px;">
+                        <strong>Total Licenses: ${licenses.length}</strong>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>License Key</th>
+                                <th>Status</th>
+                                <th>Customer</th>
+                                <th>Created</th>
+                                <th>Activations</th>
+                                <th>Expires</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                sortedLicenses.forEach(license => {
+                    const statusClass = license.status === 'active' ? 'active' : 'inactive';
+                    const createdAt = new Date(license.created_at).toLocaleDateString();
+                    const expiresAt = license.expires_at ? new Date(license.expires_at).toLocaleDateString() : 'Never';
+                    
+                    // Parse metadata safely
+                    let customerEmail = 'N/A';
+                    let isTrialBadge = '';
+                    
+                    try {
+                        const metadata = typeof license.metadata === 'string' ? JSON.parse(license.metadata) : license.metadata;
+                        if (metadata) {
+                            customerEmail = metadata.customerEmail || 'N/A';
+                            if (metadata.isTrial) {
+                                isTrialBadge = '<span class="trial-badge">TRIAL</span>';
+                            }
+                        }
+                    } catch (e) {
+                        // If metadata parsing fails, use defaults
+                    }
+
+                    html += `
+                        <tr>
+                            <td>
+                                <code style="font-size: 12px;">${license.license_key}</code>
+                                ${isTrialBadge}
+                            </td>
+                            <td><span class="status ${statusClass}">${license.status}</span></td>
+                            <td>${customerEmail}</td>
+                            <td>${createdAt}</td>
+                            <td>${license.activation_count || 0} / ${license.max_activations || 1}</td>
+                            <td>${expiresAt}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                        </tbody>
+                    </table>
+                `;
+
+                container.innerHTML = html;
             }
         }
 
