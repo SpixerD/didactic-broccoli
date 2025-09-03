@@ -1,0 +1,17 @@
+{
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 10
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/public/index.html"
+    }
+  ],
+  "env": {
+    "ADMIN_API_KEY": "@admin_api_key",
+    "DATABASE_URL": "@database_url"
+  }
+}
