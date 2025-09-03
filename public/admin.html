@@ -194,7 +194,7 @@
             <h3>API Settings</h3>
             <div class="form-group">
                 <label>Server URL:</label>
-                <input type="text" id="serverUrl" value="https://didactic-broccoli-production.up.railway.app" placeholder="https://didactic-broccoli-production.up.railway.app">
+                <input type="text" id="serverUrl" value="http://localhost:3000" placeholder="http://localhost:3000">
             </div>
             <div class="form-group">
                 <label>API Key:</label>
@@ -234,12 +234,6 @@
         </div>
 
         <div class="card">
-            <h2>All Licenses</h2>
-            <button id="loadAllLicensesBtn">Load All Licenses</button>
-            <div id="allLicensesList"></div>
-        </div>
-
-        <div class="card">
             <h2>Recent Licenses</h2>
             <button onclick="loadRecentLicenses()">Load Recent Licenses</button>
             <div id="recentLicenses"></div>
@@ -253,14 +247,12 @@
             }
 
             loadSettings() {
-                this.serverUrl = localStorage.getItem('serverUrl') || 'https://didactic-broccoli-production.up.railway.app';
+                this.serverUrl = localStorage.getItem('serverUrl') || 'http://localhost:3000';
                 this.apiKey = localStorage.getItem('apiKey') || '';
                 
                 document.getElementById('serverUrl').value = this.serverUrl;
                 document.getElementById('apiKey').value = this.apiKey;
             }
-
-            
 
             saveSettings() {
                 this.serverUrl = document.getElementById('serverUrl').value;
@@ -300,10 +292,6 @@
                     throw error;
                 }
             }
-
-            // Add event listener for the new button
-            document.getElementById('loadAllLicensesBtn').addEventListener('click', loadAllLicenses);
-
 
             showAlert(message, type) {
                 const alertsDiv = document.getElementById('alerts');
@@ -380,58 +368,6 @@
                 } catch (error) {
                     this.showAlert(`Failed to create bulk licenses. Created ${licenses.length} before error.`, 'error');
                 }
-            }
-
-            
-            async loadAllLicenses() {
-                try {
-                    const result = await this.makeRequest('/api/admin/licenses', 'GET');
-                    
-                    if (result.success) {
-                        this.displayAllLicenses(result.licenses);
-                    }
-                } catch (error) {
-                    this.showAlert('Error loading licenses', 'error');
-                }
-            }
-            
-            displayAllLicenses(licenses) {
-                const container = document.getElementById('allLicensesList');
-                
-                if (licenses.length === 0) {
-                    container.innerHTML = '<p>No licenses found.</p>';
-                    return;
-                }
-            
-                let html = `
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-                        <tr style="background: #f8f9fa;">
-                            <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">License Key</th>
-                            <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Status</th>
-                            <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Created</th>
-                            <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Customer</th>
-                            <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Activations</th>
-                        </tr>
-                `;
-            
-                licenses.forEach(license => {
-                    const statusClass = license.status === 'active' ? 'active' : 'inactive';
-                    const customerEmail = license.metadata?.customerEmail || 'N/A';
-                    const isTrialBadge = license.metadata?.isTrial ? ' <small style="background: #ffd89b; color: #333; padding: 2px 6px; border-radius: 4px;">TRIAL</small>' : '';
-                    
-                    html += `
-                        <tr>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace; font-size: 12px;">${license.license_key}</td>
-                            <td style="padding: 8px; border: 1px solid #ddd;"><span class="status ${statusClass}">${license.status}</span>${isTrialBadge}</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-size: 12px;">${new Date(license.created_at).toLocaleDateString()}</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-size: 12px;">${customerEmail}</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${license.activation_count}/${license.max_activations}</td>
-                        </tr>
-                    `;
-                });
-            
-                html += '</table>';
-                container.innerHTML = html;
             }
 
             async lookupLicense() {
@@ -561,7 +497,6 @@
             admin.loadRecentLicenses();
         }
 
-        // Add this to the function definitions at the bottom
         function loadAllLicenses() {
             admin.loadAllLicenses();
         }
