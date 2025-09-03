@@ -20,6 +20,8 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
+
+
 // Initialize SQLite database
 const db = new sqlite3.Database('licenses.db');
 
@@ -153,6 +155,16 @@ class LicenseServer {
         });
     }
 }
+
+// Add this RIGHT AFTER the middleware section in your server.js
+
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Serve admin dashboard at root URL
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
 
 // API Routes
 
