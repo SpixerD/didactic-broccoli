@@ -169,7 +169,7 @@ app.get('/', (req, res) => {
 });
 
 
-// Add this route to your server.js (before other API routes)
+// Add this route to server.js (before other API routes)
 app.get('/api/admin/licenses', async (req, res) => {
     try {
         const apiKey = req.headers['x-api-key'];
