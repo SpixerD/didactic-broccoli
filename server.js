@@ -168,6 +168,45 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
+
+// Add this route to your server.js (before other API routes)
+app.get('/api/admin/licenses', async (req, res) => {
+    try {
+        const apiKey = req.headers['x-api-key'];
+        if (apiKey !== process.env.ADMIN_API_KEY) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        // Get all licenses
+        const licenses = await new Promise((resolve, reject) => {
+            db.all(
+                'SELECT * FROM licenses ORDER BY created_at DESC LIMIT 50',
+                [],
+                (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows);
+                }
+            );
+        });
+
+        res.json({
+            success: true,
+            licenses: licenses.map(license => ({
+                ...license,
+                metadata: license.metadata ? JSON.parse(license.metadata) : {}
+            }))
+        });
+
+    } catch (error) {
+        console.error('Error fetching licenses:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching licenses.'
+        });
+    }
+});
+
+
 // API Routes
 
 // Health check
