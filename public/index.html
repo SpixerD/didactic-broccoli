@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>License Management Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #34495e;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        input[type="text"],
+        input[type="email"],
+        input[type="datetime-local"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        button {
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        button:hover {
+            background: #2980b9;
+        }
+        
+        button.danger {
+            background: #e74c3c;
+        }
+        
+        button.danger:hover {
+            background: #c0392b;
+        }
+        
+        .license-key {
+            background: #f8f9fa;
+            padding: 10px;
+            border-left: 4px solid #3498db;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 16px;
+            word-break: break-all;
+        }
+        
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status.expired {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .trial-badge {
+            background: #17a2b8;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .settings {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-width: 200px;
+        }
+        
+        .alert {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .settings {
+                position: static;
+                margin-bottom: 20px;
+            }
+            
+            table {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>License Management Dashboard - Vercel</h1>
+        
+        <div class="settings">
+            <h3>API Settings</h3>
+            <div class="form-group">
+                <label>Server URL:</label>
+                <input type="text" id="serverUrl" value="" placeholder="https://your-app.vercel.app">
+            </div>
+            <div class="form-group">
+                <label>API Key:</label>
+                <input type="text" id="apiKey" placeholder="Enter your admin API key">
+            </div>
+            <button onclick="saveSettings()">Save Settings</button>
+        </div>
+
+        <div id="alerts"></div>
+
+        <div class="card">
+            <h2>Create New License</h2>
+            <div class="form-group">
+                <label>Customer Email:</label>
+                <input type="email" id="customerEmail" placeholder="customer@example.com">
+            </div>
+            <div class="form-group">
+                <label>Expiration Date (optional):</label>
+                <input type="datetime-local" id="expiresAt">
+            </div>
+            <div class="form-group">
+                <label>Max Activations:</label>
+                <input type="number" id="maxActivations" value="1" min="1">
+            </div>
+            <button onclick="createLicense()">Create License</button>
+            <button onclick="createBulkLicenses()">Create 10 Licenses</button>
+        </div>
+
+        <div class="card">
+            <h2>License Lookup</h2>
+            <div class="form-group">
+                <label>License Key:</label>
+                <input type="text" id="lookupLicenseKey" placeholder="ABCD-EFGH-IJKL-MNOP">
+            </div>
+            <button onclick="lookupLicense()">Lookup License</button>
+            <div id="licenseDetails"></div>
+        </div>
+
+        <div class="card">
+            <h2>All Licenses</h2>
+            <button id="loadRecentBtn" onclick="loadRecentLicenses()">Load All Licenses</button>
+            <div id="recentLicenses"></div>
+        </div>
+    </div>
+
+    <script>
+        class LicenseAdmin {
+            constructor() {
+                this.loadSettings();
+                this.detectServerUrl();
+            }
+
+            detectServerUrl() {
+                // Auto-detect Vercel URL
+                const currentUrl = window.location.origin;
+                if (currentUrl.includes('vercel.app') || currentUrl.includes('localhost')) {
+                    this.serverUrl = currentUrl;
+                    document.getElementById('serverUrl').value = this.serverUrl;
+                }
+            }
+
+            loadSettings() {
+                this.serverUrl = localStorage.getItem('serverUrl') || '';
+                this.apiKey = localStorage.getItem('apiKey') || '';
+                
+                document.getElementById('serverUrl').value = this.serverUrl;
+                document.getElementById('apiKey').value = this.apiKey;
+            }
+
+            saveSettings() {
+                this.serverUrl = document.getElementById('serverUrl').value;
+                this.apiKey = document.getElementById('apiKey').value;
+                
+                localStorage.setItem('serverUrl', this.serverUrl);
+                localStorage.setItem('apiKey', this.apiKey);
+                
+                this.showAlert('Settings saved successfully!', 'success');
+            }
+
+            async makeRequest(endpoint, method = 'GET', data = null) {
+                try {
+                    const options = {
+                        method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-key': this.apiKey
+                        }
+                    };
+
+                    if (data) {
+                        options.body = JSON.stringify(data);
+                    }
+
+                    const response = await fetch(`${this.serverUrl}${endpoint}`, options);
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.message || 'Request failed');
+                    }
+
+                    return result;
+                } catch (error) {
+                    console.error('Request error:', error);
+                    this.showAlert(`Error: ${error.message}`, 'error');
+                    throw error;
+                }
+            }
+
+            showAlert(message, type) {
+                const alertsDiv = document.getElementById('alerts');
+                const alert = document.createElement('div');
+                alert.className = `alert ${type}`;
+                alert.textContent = message;
+                
+                alertsDiv.appendChild(alert);
+                
+                setTimeout(() => {
+                    alert.remove();
+                }, 5000);
+            }
+
+            async createLicense() {
+                const customerEmail = document.getElementById('customerEmail').value;
+                const expiresAt = document.getElementById('expiresAt').value || null;
+                const maxActivations = parseInt(document.getElementById('maxActivations').value);
+
+                if (!customerEmail) {
+                    this.showAlert('Please enter a customer email', 'error');
+                    return;
+                }
+
+                try {
+                    const result = await this.makeRequest('/api/admin/create-license', 'POST', {
+                        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+                        maxActivations,
+                        metadata: {
+                            customerEmail,
+                            createdAt: new Date().toISOString()
+                        }
+                    });
+
+                    this.showAlert(`License created successfully: ${result.licenseKey}`, 'success');
+                    
+                    // Clear form
+                    document.getElementById('customerEmail').value = '';
+                    document.getElementById('expiresAt').value = '';
+                    document.getElementById('maxActivations').value = '1';
+                    
+                } catch (error) {
+                    // Error already shown by makeRequest
+                }
+            }
+
+            async createBulkLicenses() {
+                const maxActivations = parseInt(document.getElementById('maxActivations').value);
+                const expiresAt = document.getElementById('expiresAt').value || null;
+                
+                const licenses = [];
+                
+                try {
+                    for (let i = 0; i < 10; i++) {
+                        const result = await this.makeRequest('/api/admin/create-license', 'POST', {
+                            expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+                            maxActivations,
+                            metadata: {
+                                batchCreated: true,
+                                createdAt: new Date().toISOString()
+                            }
+                        });
+                        
+                        licenses.push(result.licenseKey);
+                    }
+                    
+                    this.showAlert(`Created ${licenses.length} licenses successfully!`, 'success');
+                    console.log('Generated licenses:', licenses);
+                    
+                } catch (error) {
+                    this.showAlert(`Failed to create bulk licenses. Created ${licenses.length} before error.`, 'error');
+                }
+            }
+
+            async lookupLicense() {
+                const licenseKey = document.getElementById('lookupLicenseKey').value.trim();
+                
+                if (!licenseKey) {
+                    this.showAlert('Please enter a license key', 'error');
+                    return;
+                }
+
+                try {
+                    const result = await this.makeRequest(`/api/admin/license/${licenseKey}`);
+                    
+                    const detailsDiv = document.getElementById('licenseDetails');
+                    detailsDiv.innerHTML = this.renderLicenseDetails(result);
+                    
+                } catch (error) {
+                    document.getElementById('licenseDetails').innerHTML = '<p>License not found or error occurred.</p>';
+                }
+            }
+
+            renderLicenseDetails(data) {
+                const license = data.license;
+                const activations = data.activations || [];
+                
+                const statusClass = license.status === 'active' ? 'active' : 'inactive';
+                const expiresAt = license.expires_at ? new Date(license.expires_at).toLocaleString() : 'Never';
+                
+                let html = `
+                    <h3>License Details</h3>
+                    <table>
+                        <tr><td><strong>License Key:</strong></td><td class="license-key">${license.license_key}</td></tr>
+                        <tr><td><strong>Status:</strong></td><td><span class="status ${statusClass}">${license.status}</span></td></tr>
+                        <tr><td><strong>Created:</strong></td><td>${new Date(license.created_at).toLocaleString()}</td></tr>
+                        <tr><td><strong>Expires:</strong></td><td>${expiresAt}</td></tr>
+                        <tr><td><strong>Activations:</strong></td><td>${license.activation_count} / ${license.max_activations}</td></tr>
+                        <tr><td><strong>Fingerprint:</strong></td><td>${license.fingerprint || 'Not activated'}</td></tr>
+                    </table>
+                    
+                    <div style="margin: 15px 0;">
+                        <button onclick="admin.deactivateLicense('${license.license_key}')" class="danger">Deactivate License</button>
+                    </div>
+                `;
+                
+                if (activations.length > 0) {
+                    html += `
+                        <h4>Recent Activations</h4>
+                        <table>
+                            <tr><th>Date</th><th>IP Address</th><th>Fingerprint</th></tr>
+                    `;
+                    
+                    activations.forEach(activation => {
+                        html += `
+                            <tr>
+                                <td>${new Date(activation.activated_at).toLocaleString()}</td>
+                                <td>${activation.ip_address}</td>
+                                <td>${activation.fingerprint.substring(0, 20)}...</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += '</table>';
+                }
+                
+                return html;
+            }
+
+            async deactivateLicense(licenseKey) {
+                if (!confirm(`Are you sure you want to deactivate license ${licenseKey}?`)) {
+                    return;
+                }
+
+                try {
+                    await this.makeRequest(`/api/admin/deactivate/${licenseKey}`, 'POST');
+                    this.showAlert('License deactivated successfully', 'success');
+                    
+                    // Refresh license details
+                    document.getElementById('lookupLicenseKey').value = licenseKey;
+                    this.lookupLicense();
+                    
+                } catch (error) {
+                    // Error already shown by makeRequest
+                }
+            }
+
+            async loadRecentLicenses() {
+                try {
+                    const result = await this.makeRequest('/api/admin/licenses', 'GET');
+                    
+                    if (result.success) {
+                        this.displayAllLicenses(result.licenses);
+                    }
+                } catch (error) {
+                    this.showAlert('Error loading licenses', 'error');
+                }
+            }
+
+            displayAllLicenses(licenses) {
+                const container = document.getElementById('recentLicenses');
+                
+                if (!licenses || licenses.length === 0) {
+                    container.innerHTML = '<p>No licenses found.</p>';
+                    return;
+                }
+
+                const sortedLicenses = licenses.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+                let html = `
+                    <div style="margin-bottom: 15px;">
+                        <strong>Total Licenses: ${licenses.length}</strong>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>License Key</th>
+                                <th>Status</th>
+                                <th>Customer</th>
+                                <th>Created</th>
+                                <th>Activations</th>
+                                <th>Expires</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                sortedLicenses.forEach(license => {
+                    const statusClass = license.status === 'active' ? 'active' : 'inactive';
+                    const createdAt = new Date(license.created_at).toLocaleDateString();
+                    const expiresAt = license.expires_at ? new Date(license.expires_at).toLocaleDateString() : 'Never';
+                    
+                    let customerEmail = 'N/A';
+                    let isTrialBadge = '';
+                    
+                    const metadata = license.metadata || {};
+                    if (metadata) {
+                        customerEmail = metadata.customerEmail || 'N/A';
+                        if (metadata.isTrial) {
+                            isTrialBadge = '<span class="trial-badge">TRIAL</span>';
+                        }
+                    }
+
+                    html += `
+                        <tr>
+                            <td>
+                                <code style="font-size: 12px;">${license.license_key}</code>
+                                ${isTrialBadge}
+                            </td>
+                            <td><span class="status ${statusClass}">${license.status}</span></td>
+                            <td>${customerEmail}</td>
+                            <td>${createdAt}</td>
+                            <td>${license.activation_count || 0} / ${license.max_activations || 1}</td>
+                            <td>${expiresAt}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                        </tbody>
+                    </table>
+                `;
+
+                container.innerHTML = html;
+            }
+        }
+
+        // Initialize the admin interface
+        const admin = new LicenseAdmin();
+
+        // Expose functions for HTML onclick handlers
+        function saveSettings() {
+            admin.saveSettings();
+        }
+
+        function createLicense() {
+            admin.createLicense();
+        }
+
+        function createBulkLicenses() {
+            admin.createBulkLicenses();
+        }
+
+        function lookupLicense() {
+            admin.lookupLicense();
+        }
+
+        function loadRecentLicenses() {
+            admin.loadRecentLicenses();
+        }
+
+        // Set default expiration to 1 year from now
+        document.addEventListener('DOMContentLoaded', function() {
+            const oneYearFromNow = new Date();
+            oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+            
+            const formattedDate = oneYearFromNow.toISOString().slice(0, 16);
+            document.getElementById('expiresAt').value = formattedDate;
+        });
+    </script>
+</body>
+</html>
