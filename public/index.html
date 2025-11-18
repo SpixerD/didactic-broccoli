@@ -198,13 +198,13 @@
 </head>
 <body>
     <div class="container">
-        <h1>License Management Dashboard</h1>
+        <h1>License Management Dashboard - Vercel</h1>
         
         <div class="settings">
             <h3>API Settings</h3>
             <div class="form-group">
                 <label>Server URL:</label>
-                <input type="text" id="serverUrl" value="https://didactic-broccoli-production.up.railway.app" placeholder="https://didactic-broccoli-production.up.railway.app">
+                <input type="text" id="serverUrl" value="" placeholder="https://your-app.vercel.app">
             </div>
             <div class="form-group">
                 <label>API Key:</label>
@@ -254,10 +254,20 @@
         class LicenseAdmin {
             constructor() {
                 this.loadSettings();
+                this.detectServerUrl();
+            }
+
+            detectServerUrl() {
+                // Auto-detect Vercel URL
+                const currentUrl = window.location.origin;
+                if (currentUrl.includes('vercel.app') || currentUrl.includes('localhost')) {
+                    this.serverUrl = currentUrl;
+                    document.getElementById('serverUrl').value = this.serverUrl;
+                }
             }
 
             loadSettings() {
-                this.serverUrl = localStorage.getItem('serverUrl') || 'https://didactic-broccoli-production.up.railway.app';
+                this.serverUrl = localStorage.getItem('serverUrl') || '';
                 this.apiKey = localStorage.getItem('apiKey') || '';
                 
                 document.getElementById('serverUrl').value = this.serverUrl;
@@ -371,10 +381,6 @@
                     this.showAlert(`Created ${licenses.length} licenses successfully!`, 'success');
                     console.log('Generated licenses:', licenses);
                     
-                    // Display licenses
-                    const licenseList = licenses.map(key => `<div class="license-key">${key}</div>`).join('');
-                    this.showAlert(`Generated licenses:\n${licenseList}`, 'success');
-                    
                 } catch (error) {
                     this.showAlert(`Failed to create bulk licenses. Created ${licenses.length} before error.`, 'error');
                 }
@@ -419,7 +425,6 @@
                     
                     <div style="margin: 15px 0;">
                         <button onclick="admin.deactivateLicense('${license.license_key}')" class="danger">Deactivate License</button>
-                        <button onclick="admin.resetActivation('${license.license_key}')">Reset Activation</button>
                     </div>
                 `;
                 
@@ -464,21 +469,7 @@
                 }
             }
 
-            async resetActivation(licenseKey) {
-                if (!confirm(`Are you sure you want to reset activation for ${licenseKey}? This will allow it to be activated on a new device.`)) {
-                    return;
-                }
-
-                try {
-                    // This would require an additional endpoint on your server
-                    this.showAlert('Reset activation functionality needs to be implemented on the server', 'error');
-                } catch (error) {
-                    // Error handling
-                }
-            }
-
             async loadRecentLicenses() {
-                // Load all licenses (renamed from recent to all)
                 try {
                     const result = await this.makeRequest('/api/admin/licenses', 'GET');
                     
@@ -498,7 +489,6 @@
                     return;
                 }
 
-                // Sort licenses by creation date (newest first)
                 const sortedLicenses = licenses.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
                 let html = `
@@ -524,20 +514,15 @@
                     const createdAt = new Date(license.created_at).toLocaleDateString();
                     const expiresAt = license.expires_at ? new Date(license.expires_at).toLocaleDateString() : 'Never';
                     
-                    // Parse metadata safely
                     let customerEmail = 'N/A';
                     let isTrialBadge = '';
                     
-                    try {
-                        const metadata = typeof license.metadata === 'string' ? JSON.parse(license.metadata) : license.metadata;
-                        if (metadata) {
-                            customerEmail = metadata.customerEmail || 'N/A';
-                            if (metadata.isTrial) {
-                                isTrialBadge = '<span class="trial-badge">TRIAL</span>';
-                            }
+                    const metadata = license.metadata || {};
+                    if (metadata) {
+                        customerEmail = metadata.customerEmail || 'N/A';
+                        if (metadata.isTrial) {
+                            isTrialBadge = '<span class="trial-badge">TRIAL</span>';
                         }
-                    } catch (e) {
-                        // If metadata parsing fails, use defaults
                     }
 
                     html += `
@@ -588,16 +573,11 @@
             admin.loadRecentLicenses();
         }
 
-        function loadAllLicenses() {
-            admin.loadAllLicenses();
-        }
-
         // Set default expiration to 1 year from now
         document.addEventListener('DOMContentLoaded', function() {
             const oneYearFromNow = new Date();
             oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
             
-            // Format for datetime-local input
             const formattedDate = oneYearFromNow.toISOString().slice(0, 16);
             document.getElementById('expiresAt').value = formattedDate;
         });
